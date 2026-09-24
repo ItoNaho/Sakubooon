@@ -4,12 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>100字帳 作文下書き</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   body {
     margin: 0;
     padding: 24px;
-    font-family: "Yu Gothic", "Meiryo", sans-serif;
+    font-family: "BIZ UDGothic", sans-serif;
     background: #f5f6f8;
     color: #333;
   }
@@ -164,13 +167,67 @@
   }
 
   @media print {
-    body { background: white; padding: 0; }
-    h1, .input-panel, .preview-title, .page-label { display: none; }
-    .panel { box-shadow: none; padding: 0; }
-    .preview-panel { overflow: visible; }
-    .page-wrapper { page-break-after: always; }
-    .cell { color: rgba(35, 110, 150, .55); }
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
   }
+
+  h1,
+  .input-panel,
+  .preview-title,
+  .page-label {
+    display: none;
+  }
+
+  .layout {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+
+  .panel {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .preview-panel {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .page-wrapper {
+    margin: 0;
+    padding: 0;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .page-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .notebook-frame {
+    width: max-content;
+    margin: 0 auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+
+    /* 用紙に合わせて縮小 */
+    transform-origin: top center;
+  }
+
+  .cell {
+    color: rgba(35, 110, 150, .55);
+  }
+}
+
 </style>
 </head>
 <body>
