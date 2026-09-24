@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100字帳 作文下書き</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: "Yu Gothic", "Meiryo", sans-serif;
+    background: #f5f6f8;
+    color: #333;
+  }
+  h1 { margin: 0 0 18px; font-size: 24px; }
+  .layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  .input-panel { width: 360px; max-width: 100%; }
+  .preview-panel { flex: 1; min-width: 720px; overflow-x: auto; }
+  label { display: block; font-weight: bold; margin-bottom: 8px; }
+  textarea {
+    width: 100%;
+    min-height: 300px;
+    resize: vertical;
+    padding: 12px;
+    font-size: 17px;
+    line-height: 1.8;
+    border: 1px solid #cfd4dc;
+    border-radius: 8px;
+    font-family: inherit;
+  }
+  .controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    border: 0; border-radius: 8px; padding: 10px 14px;
+    cursor: pointer; background: #4b72b8; color: white; font-weight: bold;
+  }
+  button.secondary { background: #e5e8ee; color: #333; }
+  button:hover { opacity: .85; }
+  .counter { margin-top: 10px; font-size: 14px; color: #555; }
+  .hint { margin-top: 12px; font-size: 13px; line-height: 1.7; color: #777; }
+  .preview-title {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; margin-bottom: 14px;
+  }
+  .preview-title h2 { margin: 0; font-size: 18px; }
+  .page-count { color: #777; font-size: 13px; }
+
+  .page-wrapper { margin-bottom: 24px; }
+  .page-label { margin: 0 0 8px; color: #666; font-size: 14px; }
+
+  /* 画像を参考にした帳面：右端から左へ、各列は上から下へ */
+  .notebook-frame {
+    display: flex;
+    flex-direction: row;
+    direction: ltr;
+    width: max-content;
+    border: 2px solid #2aa8d2;
+    background: #fff;
+  }
+
+  .writing-grid {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: stretch;
+    direction: ltr;
+  }
+
+  /* 1列分：本文の右側にふりがな欄 */
+  .column-group {
+    display: flex;
+    flex-direction: row;
+    height: 420px;
+  }
+
+  .main-column {
+    display: grid;
+    grid-template-rows: repeat(10, 42px);
+    width: 44px;
+  }
+
+  .furigana-column {
+    display: grid;
+    grid-template-rows: repeat(10, 42px);
+    width: 14px;
+    border-left: 1px solid #70c7e2;
+  }
+
+  .cell {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    white-space: pre;
+    line-height: 1;
+    color: rgba(55, 130, 165, .35);
+    border-bottom: 1px solid #70c7e2;
+  }
+
+  .main-column .cell {
+    width: 44px;
+    font-size: 25px;
+    border-left: 1px solid #70c7e2;
+  }
+
+  .furigana-column .cell {
+    width: 14px;
+    font-size: 10px;
+    color: rgba(55, 130, 165, .25);
+    border-left: 0;
+  }
+
+  .cell.full { color: rgba(35, 110, 150, .65); }
+  .cell { position: relative; }
+  .cell .small-char {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.78em;
+    line-height: 1;
+  }
+  .cell .punctuation-overlay {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    font-size: 0.78em;
+    line-height: 1;
+  }
+
+  .date-panel {
+    width: 62px;
+    height: 420px;
+    border-left: 2px solid #2aa8d2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    color: #2aa8d2;
+    font-size: 15px;
+    padding-top: 48px;
+    gap: 26px;
+  }
+  .date-item {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: 2px;
+  }
+  .date-bottom {
+    margin-top: auto;
+    padding-bottom: 8px;
+    font-size: 13px;
+    writing-mode: horizontal-tb;
+  }
+
+  @media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  h1,
+  .input-panel,
+  .preview-title,
+  .page-label {
+    display: none;
+  }
+
+  .layout {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+
+  .panel {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .preview-panel {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .page-wrapper {
+    margin: 0;
+    padding: 0;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .page-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .notebook-frame {
+    width: max-content;
+    margin: 0 auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+
+    /* 用紙に合わせて縮小 */
+    transform-origin: top center;
+  }
+
+  .cell {
+    color: rgba(35, 110, 150, .55);
+  }
+}
+
+</style>
+</head>
+<body>
+<h1>100字帳 作文下書き</h1>
+
+<div class="layout">
+  <section class="panel input-panel">
+    <label for="essay">作文を入力</label>
+    <textarea id="essay" placeholder="ここに作文を入力してください。&#10;&#10;一番右の列の上から下へ表示されます。"></textarea>
+    <div class="counter">文字数：<strong id="charCount">0</strong>文字</div>
+    <div class="controls">
+      <button id="clearBtn" class="secondary">クリア</button>
+      <button id="printBtn">印刷</button>
+    </div>
+    <div class="hint">
+      ・一番右の列の上から下へ書き進みます。<br>
+      ・101文字目以降は次のページに表示されます。
+    </div>
+  </section>
+
+  <section class="panel preview-panel">
+    <div class="preview-title">
+      <h2>100字帳プレビュー</h2>
+      <span class="page-count" id="pageCount">1ページ</span>
+    </div>
+    <div id="pages"></div>
+  </section>
+</div>
+
+<script>
+  const essay = document.getElementById("essay");
+  const pages = document.getElementById("pages");
+  const charCount = document.getElementById("charCount");
+  const pageCount = document.getElementById("pageCount");
+
+  function normalizeText(text) {
+    return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  }
+
+  const SMALL_CHARS = new Set(["っ", "ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ッ", "ャ", "ュ", "ョ", "ァ", "ィ", "ゥ", "ェ", "ォ"]);
+  const PUNCTUATION = new Set(["。", "、"]);
+
+  function createTextSpan(text, className = "") {
+    const span = document.createElement("span");
+    span.textContent = text;
+    if (className) span.className = className;
+    return span;
+  }
+
+  function makeCell(slot) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+
+    if (!slot) return cell;
+
+    const ch = slot.main || "";
+    if (ch) {
+      const isSmall = SMALL_CHARS.has(ch) || PUNCTUATION.has(ch);
+      const span = createTextSpan(ch, isSmall ? "small-char" : "");
+      cell.appendChild(span);
+      cell.classList.add("full");
+    }
+
+    if (slot.punctuation) {
+      cell.appendChild(createTextSpan(slot.punctuation, "punctuation-overlay"));
+      cell.classList.add("full");
+    }
+    return cell;
+  }
+
+  // 入力文字を100マス帳の通し番号に配置する。
+  // ・各列は上から下へ10マス
+  // ・列が埋まると右から左へ移動
+  // ・段落改行は次の列の先頭へ移動し、1マス空ける
+  // ・列頭の「。」「、」は直前列の最後のマス右下へ配置する
+  function buildSlots(chars) {
+    const slots = [];
+    let cursor = 0;
+    let paragraphStart = true;
+
+    function ensureSlot(index) {
+      while (slots.length <= index) slots.push(null);
+      if (!slots[index]) slots[index] = {};
+      return slots[index];
+    }
+
+    for (const ch of chars) {
+      if (ch === "\n") {
+        // 改行後は次の縦列の先頭へ。次の文字は段落行頭として1マス下げる。
+        cursor = Math.ceil(cursor / 10) * 10;
+        paragraphStart = true;
+        continue;
+      }
+
+      if (paragraphStart) {
+        cursor += 1;
+        paragraphStart = false;
+      }
+
+      // 11文字目など、列頭に来た句読点は前のマスの右下へ。
+      if (PUNCTUATION.has(ch) && cursor > 0 && cursor % 10 === 0) {
+        const previous = ensureSlot(cursor - 1);
+        previous.punctuation = ch;
+        continue;
+      }
+
+      ensureSlot(cursor).main = ch;
+      cursor += 1;
+    }
+
+    return { slots, usedLength: Math.max(cursor, 1) };
+  }
+
+  function render() {
+    const chars = [...normalizeText(essay.value)];
+    charCount.textContent = chars.filter(ch => ch !== "\n").length;
+
+    const layout = buildSlots(chars);
+    const totalPages = Math.max(1, Math.ceil(layout.usedLength / 100));
+    pageCount.textContent = totalPages + "ページ";
+    pages.innerHTML = "";
+
+    for (let page = 0; page < totalPages; page++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "page-wrapper";
+
+      const label = document.createElement("div");
+      label.className = "page-label";
+      label.textContent = (page + 1) + "ページ目";
+      wrapper.appendChild(label);
+
+      const frame = document.createElement("div");
+      frame.className = "notebook-frame";
+
+      const grid = document.createElement("div");
+      grid.className = "writing-grid";
+
+      // col=0が一番右の列。row=0から上→下へ配置。
+      for (let col = 0; col < 10; col++) {
+        const group = document.createElement("div");
+        group.className = "column-group";
+
+        const main = document.createElement("div");
+        main.className = "main-column";
+
+        const furigana = document.createElement("div");
+        furigana.className = "furigana-column";
+
+        for (let row = 0; row < 10; row++) {
+          const index = page * 100 + col * 10 + row;
+          main.appendChild(makeCell(layout.slots[index] || null));
+          furigana.appendChild(makeCell(null));
+        }
+
+        // 本文の右側にふりがな欄
+        group.appendChild(main);
+        group.appendChild(furigana);
+        grid.appendChild(group);
+      }
+
+      const datePanel = document.createElement("div");
+      datePanel.className = "date-panel";
+      datePanel.innerHTML = `
+        <div class="date-item">月</div>
+        <div class="date-item">日</div>
+        <div class="date-item">曜日</div>
+        <div class="date-bottom">（　）</div>
+      `;
+
+      frame.appendChild(grid);
+      frame.appendChild(datePanel);
+      wrapper.appendChild(frame);
+      pages.appendChild(wrapper);
+    }
+  }
+
+  essay.addEventListener("input", render);
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    if (confirm("入力した作文をクリアしますか？")) {
+      essay.value = "";
+      render();
+      essay.focus();
+    }
+  });
+
+  document.getElementById("printBtn").addEventListener("click", () => {
+    window.print();
+  });
+
+  render();
+</script>
+</body>
+</html>
